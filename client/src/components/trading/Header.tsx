@@ -1,3 +1,6 @@
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+
 interface HeaderProps {
   user: any;
   isConnected: boolean;
@@ -42,9 +45,14 @@ export default function Header({ user, isConnected }: HeaderProps) {
             +$347.20
           </p>
         </div>
-        <button className="bg-[hsl(var(--info-blue))] hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition-colors text-white">
+        <Link href="/clients">
+          <Button className="bg-[hsl(var(--warning-amber))] hover:bg-amber-600 text-black">
+            <i className="fas fa-users mr-2"></i>Manage Clients
+          </Button>
+        </Link>
+        <Button className="bg-[hsl(var(--info-blue))] hover:bg-blue-600 text-white">
           <i className="fas fa-plus mr-2"></i>Deposit
-        </button>
+        </Button>
       </div>
     </div>
   );

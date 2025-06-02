@@ -1,11 +1,24 @@
-import { users, markets, trades, type User, type InsertUser, type Market, type InsertMarket, type Trade, type InsertTrade } from "@shared/schema";
+import {
+  users,
+  markets,
+  trades,
+  type User,
+  type UpsertUser,
+  type Market,
+  type InsertMarket,
+  type Trade,
+  type InsertTrade,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUserBalance(userId: number, newBalance: string): Promise<void>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  updateUserBalance(userId: string, newBalance: string): Promise<void>;
 
   // Market operations
   getAllMarkets(): Promise<Market[]>;
@@ -21,18 +34,129 @@ export interface IStorage {
   closeTrade(tradeId: number, exitPrice: string, payout: string, profit: string): Promise<void>;
 }
 
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserBalance(userId: string, newBalance: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ balance: newBalance, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  // Market operations
+  async getAllMarkets(): Promise<Market[]> {
+    return await db.select().from(markets);
+  }
+
+  async getMarket(symbol: string): Promise<Market | undefined> {
+    const [market] = await db.select().from(markets).where(eq(markets.symbol, symbol));
+    return market;
+  }
+
+  async updateMarket(symbol: string, updates: Partial<Market>): Promise<void> {
+    await db
+      .update(markets)
+      .set({ ...updates, lastUpdate: new Date() })
+      .where(eq(markets.symbol, symbol));
+  }
+
+  async createMarket(marketData: InsertMarket): Promise<Market> {
+    const [market] = await db
+      .insert(markets)
+      .values({
+        ...marketData,
+        lastUpdate: new Date(),
+      })
+      .returning();
+    return market;
+  }
+
+  // Trade operations
+  async createTrade(tradeData: InsertTrade): Promise<Trade> {
+    const [trade] = await db
+      .insert(trades)
+      .values({
+        ...tradeData,
+        createdAt: new Date(),
+      })
+      .returning();
+    return trade;
+  }
+
+  async getTradesByUser(userId: number): Promise<Trade[]> {
+    return await db.select().from(trades).where(eq(trades.userId, userId));
+  }
+
+  async getOpenTradesByUser(userId: number): Promise<Trade[]> {
+    return await db
+      .select()
+      .from(trades)
+      .where(eq(trades.userId, userId))
+      .where(eq(trades.status, "open"));
+  }
+
+  async updateTrade(tradeId: number, updates: Partial<Trade>): Promise<void> {
+    await db
+      .update(trades)
+      .set(updates)
+      .where(eq(trades.id, tradeId));
+  }
+
+  async closeTrade(tradeId: number, exitPrice: string, payout: string, profit: string): Promise<void> {
+    await db
+      .update(trades)
+      .set({
+        exitPrice,
+        payout,
+        profit,
+        status: parseFloat(profit) > 0 ? "won" : "lost",
+        closedAt: new Date(),
+      })
+      .where(eq(trades.id, tradeId));
+  }
+}
+
+// Keep the in-memory storage as fallback
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
+  private users: Map<string, User>;
   private markets: Map<string, Market>;
   private trades: Map<number, Trade>;
-  private currentUserId: number;
   private currentTradeId: number;
 
   constructor() {
     this.users = new Map();
     this.markets = new Map();
     this.trades = new Map();
-    this.currentUserId = 1;
     this.currentTradeId = 1;
 
     // Initialize with demo markets
