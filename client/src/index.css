@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 11% 98%;
+  --foreground: 224 71% 4%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 4%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --primary: 220 14% 96%;
+  --primary-foreground: 220 9% 46%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 9% 46%;
+  --accent: 220 14% 96%;
+  --accent-foreground: 220 9% 46%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 224 71% 4%;
+  --radius: 0.5rem;
+  
+  /* Trading specific colors */
+  --trading-dark: 222 84% 5%; /* #0F172A */
+  --trading-slate: 215 28% 17%; /* #1E293B */
+  --trading-gray: 215 20% 27%; /* #334155 */
+  --profit-green: 158 64% 52%; /* #10B981 */
+  --loss-red: 0 84% 60%; /* #EF4444 */
+  --info-blue: 221 83% 53%; /* #3B82F6 */
+  --warning-amber: 43 96% 56%; /* #F59E0B */
+}
+
+.dark {
+  --background: 222 84% 5%;
+  --foreground: 210 40% 98%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 84% 5%;
+  --popover-foreground: 210 40% 98%;
+  --card: 222 84% 5%;
+  --card-foreground: 210 40% 98%;
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 84% 5%;
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 215 28% 17%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 212 72% 59%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[hsl(var(--trading-dark))] text-[hsl(var(--foreground))] font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .trading-dark {
+    background-color: hsl(var(--trading-dark));
+  }
+  
+  .trading-slate {
+    background-color: hsl(var(--trading-slate));
+  }
+  
+  .trading-gray {
+    background-color: hsl(var(--trading-gray));
+  }
+  
+  .profit-green {
+    color: hsl(var(--profit-green));
+  }
+  
+  .bg-profit-green {
+    background-color: hsl(var(--profit-green));
+  }
+  
+  .loss-red {
+    color: hsl(var(--loss-red));
+  }
+  
+  .bg-loss-red {
+    background-color: hsl(var(--loss-red));
+  }
+  
+  .info-blue {
+    color: hsl(var(--info-blue));
+  }
+  
+  .bg-info-blue {
+    background-color: hsl(var(--info-blue));
+  }
+  
+  .warning-amber {
+    color: hsl(var(--warning-amber));
+  }
+  
+  .bg-warning-amber {
+    background-color: hsl(var(--warning-amber));
+  }
+}
