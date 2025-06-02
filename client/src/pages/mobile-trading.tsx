@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useDerivAuth } from "@/hooks/use-deriv-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,28 +24,46 @@ export default function MobileTradingPage() {
   const [selectedContract, setSelectedContract] = useState<"CALL" | "PUT">("CALL");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading: authLoading, authToken, initiateLogin, logout } = useDerivAuth();
 
   // Fetch market data
   const { data: marketData, isLoading: marketLoading, error: marketError } = useQuery({
     queryKey: ['market-data'],
     queryFn: async (): Promise<MarketData> => {
-      const response = await fetch(`${API_BASE_URL}/market-data`);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/market-data`, {
+        headers,
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch market data: ${response.statusText}`);
       }
       return response.json();
     },
-    refetchInterval: 2000, // Refresh every 2 seconds
+    refetchInterval: isAuthenticated ? 2000 : false,
+    enabled: isAuthenticated,
   });
 
   // Place trade mutation
   const placeTradeMutation = useMutation({
     mutationFn: async (tradeData: TradeRequest) => {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
       const response = await fetch(`${API_BASE_URL}/trade`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(tradeData),
       });
       
@@ -89,12 +108,66 @@ export default function MobileTradingPage() {
 
   const quickAmounts = [10, 50, 100, 250, 500];
 
+  // Show authentication screen if not authenticated
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="container mx-auto px-4 max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-4">ChartBotAixTrade</h1>
+            <p className="text-slate-300 mb-8">Professional Binary Options Trading Platform</p>
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">Connect with Deriv</h2>
+                <p className="text-slate-400 mb-6 text-sm">
+                  Authenticate with your Deriv account to start trading binary options with real-time market data.
+                </p>
+                <Button 
+                  onClick={initiateLogin}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-200"
+                >
+                  Login with Deriv OAuth
+                </Button>
+              </div>
+              <div className="text-center text-slate-500 text-xs">
+                <p>App ID: 76613 • Powered by Deriv API</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       {/* App Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-6 text-center">
-        <h1 className="text-2xl font-bold">ChartBotAixTrade</h1>
-        <p className="text-blue-100 text-sm mt-1">Binary Options Trading</p>
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-6">
+        <div className="flex justify-between items-center">
+          <div className="text-center flex-1">
+            <h1 className="text-2xl font-bold">ChartBotAixTrade</h1>
+            <p className="text-blue-100 text-sm mt-1">Binary Options Trading</p>
+          </div>
+          <Button 
+            onClick={logout}
+            variant="outline"
+            size="sm"
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            Logout
+          </Button>
+        </div>
       </div>
 
       <div className="p-4 space-y-6 max-w-md mx-auto">
