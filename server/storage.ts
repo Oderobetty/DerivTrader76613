@@ -104,9 +104,11 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const user: User = { 
-      ...insertUser, 
-      id, 
-      balance: "10000.00", // Demo balance
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
+      derivAccountId: insertUser.derivAccountId || null,
+      balance: "10000.00",
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -141,8 +143,17 @@ export class MemStorage implements IStorage {
   async createMarket(insertMarket: InsertMarket): Promise<Market> {
     const id = this.markets.size + 1;
     const market: Market = { 
-      ...insertMarket, 
-      id, 
+      id,
+      symbol: insertMarket.symbol,
+      name: insertMarket.name,
+      category: insertMarket.category,
+      currentPrice: insertMarket.currentPrice || null,
+      change: insertMarket.change || null,
+      changePercent: insertMarket.changePercent || null,
+      high: insertMarket.high || null,
+      low: insertMarket.low || null,
+      volume: insertMarket.volume || null,
+      isActive: insertMarket.isActive !== undefined ? insertMarket.isActive : true,
       lastUpdate: new Date(),
     };
     this.markets.set(market.symbol, market);
@@ -153,8 +164,20 @@ export class MemStorage implements IStorage {
   async createTrade(insertTrade: InsertTrade): Promise<Trade> {
     const id = this.currentTradeId++;
     const trade: Trade = { 
-      ...insertTrade, 
-      id, 
+      id,
+      userId: insertTrade.userId,
+      symbol: insertTrade.symbol,
+      tradeType: insertTrade.tradeType,
+      contractType: insertTrade.contractType,
+      stake: insertTrade.stake,
+      entryPrice: insertTrade.entryPrice || null,
+      exitPrice: null,
+      duration: insertTrade.duration,
+      durationType: insertTrade.durationType,
+      status: insertTrade.status || "open",
+      payout: null,
+      profit: null,
+      derivTradeId: insertTrade.derivTradeId || null,
       createdAt: new Date(),
       closedAt: null,
     };

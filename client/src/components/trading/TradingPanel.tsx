@@ -78,12 +78,16 @@ export default function TradingPanel({ market, userBalance }: TradingPanelProps)
       <div className="mb-6">
         <Label className="block text-sm font-medium mb-2 text-white">Market</Label>
         <div className="relative">
-          <Select value={market?.symbol || ""} disabled>
+          <Select value={market?.symbol || "none"} disabled>
             <SelectTrigger className="w-full bg-[hsl(var(--trading-gray))] border-[hsl(var(--trading-gray))] text-white">
               <SelectValue placeholder="Select market" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={market?.symbol || ""}>{market?.symbol}</SelectItem>
+              {market ? (
+                <SelectItem value={market.symbol}>{market.symbol}</SelectItem>
+              ) : (
+                <SelectItem value="none">No market selected</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
