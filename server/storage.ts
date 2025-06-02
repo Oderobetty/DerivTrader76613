@@ -114,15 +114,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTradesByUser(userId: number): Promise<Trade[]> {
-    return await db.select().from(trades).where(eq(trades.userId, userId));
+    return await db.select().from(trades).where(eq(trades.userId, userId.toString()));
   }
 
   async getOpenTradesByUser(userId: number): Promise<Trade[]> {
     return await db
       .select()
       .from(trades)
-      .where(eq(trades.userId, userId))
-      .where(eq(trades.status, "open"));
+      .where(eq(trades.userId, userId.toString()));
   }
 
   async updateTrade(tradeId: number, updates: Partial<Trade>): Promise<void> {
@@ -345,4 +344,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();

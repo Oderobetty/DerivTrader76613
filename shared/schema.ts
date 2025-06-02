@@ -59,7 +59,7 @@ export const markets = pgTable("markets", {
 
 export const trades = pgTable("trades", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   symbol: text("symbol").notNull(),
   tradeType: text("trade_type").notNull(), // CALL, PUT
   contractType: text("contract_type").notNull(), // Higher/Lower, Touch/No Touch, etc.
