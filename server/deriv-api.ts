@@ -196,8 +196,8 @@ export class DerivAPI extends EventEmitter {
     }
   }
 
-  private generateRequestId(): string {
-    return Math.random().toString(36).substring(2, 15);
+  private generateRequestId(): number {
+    return Math.floor(Math.random() * 1000000000);
   }
 
   disconnect() {
