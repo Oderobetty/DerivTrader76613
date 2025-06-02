@@ -140,7 +140,7 @@ export class DerivAPI extends EventEmitter {
     };
     
     const reqId = this.generateRequestId();
-    this.subscriptions.set(symbol, reqId);
+    this.subscriptions.set(symbol, reqId.toString());
     
     this.send({ ...request, req_id: reqId });
   }

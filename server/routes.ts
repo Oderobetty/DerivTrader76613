@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertTradeSchema } from "@shared/schema";
 import { z } from "zod";
 import DerivAPI from "./deriv-api";
+import { clientManager } from "./client-manager";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -293,7 +294,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mock user for demo purposes
+  // Client Management Endpoints
+
+  // Connect a client to Deriv API
+  app.post("/api/clients/connect", async (req, res) => {
+    try {
+      const { userId, derivAccountId, apiToken, currency = 'USD' } = req.body;
+
+      if (!apiToken) {
+        return res.status(400).json({ message: "API token is required" });
+      }
+
+      const success = await clientManager.connectClient({
+        userId,
+        derivAccountId,
+        apiToken,
+        balance: "0",
+        currency,
+        isActive: true
+      });
+
+      if (success) {
+        res.json({ message: "Client connected successfully", connected: true });
+      } else {
+        res.status(500).json({ message: "Failed to connect client" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Connection error" });
+    }
+  });
+
+  // Disconnect a client
+  app.post("/api/clients/:clientId/disconnect", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      await clientManager.disconnectClient(clientId);
+      res.json({ message: "Client disconnected successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to disconnect client" });
+    }
+  });
+
+  // Place trade for a specific client
+  app.post("/api/clients/:clientId/trade", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const { symbol, tradeType, amount, duration, durationType, contractType } = req.body;
+
+      const trade = await clientManager.placeTradeForClient({
+        clientId,
+        symbol,
+        tradeType,
+        amount,
+        duration,
+        durationType,
+        contractType
+      });
+
+      res.json({ trade, message: "Trade placed successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to place trade" });
+    }
+  });
+
+  // Get client balance
+  app.get("/api/clients/:clientId/balance", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const balance = await clientManager.getClientBalance(clientId);
+      
+      if (balance !== null) {
+        res.json({ balance, connected: clientManager.isClientConnected(clientId) });
+      } else {
+        res.status(404).json({ message: "Client not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch balance" });
+    }
+  });
+
+  // Get client trades
+  app.get("/api/clients/:clientId/trades", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const trades = await clientManager.getClientTrades(clientId);
+      res.json(trades);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch trades" });
+    }
+  });
+
+  // Get client active positions
+  app.get("/api/clients/:clientId/positions", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const positions = await clientManager.getClientActivePositions(clientId);
+      res.json(positions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch positions" });
+    }
+  });
+
+  // Get all connected clients
+  app.get("/api/clients/connected", async (req, res) => {
+    try {
+      const connectedClients = await clientManager.getAllConnectedClients();
+      res.json({ clients: connectedClients, count: connectedClients.length });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch connected clients" });
+    }
+  });
+
+  // Subscribe client to market data
+  app.post("/api/clients/:clientId/subscribe", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const { symbols } = req.body;
+
+      await clientManager.subscribeClientToMarketData(clientId, symbols);
+      res.json({ message: "Subscribed to market data successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to subscribe to market data" });
+    }
+  });
+
+  // Demo user endpoint (fallback for testing without real API tokens)
   app.get("/api/user/demo", async (req, res) => {
     try {
       const demoUser = {
@@ -301,6 +426,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: "demo_trader",
         balance: "10247.50",
         derivAccountId: "76613",
+        connected: false,
+        message: "Connect with real API token for live trading"
       };
       res.json(demoUser);
     } catch (error) {
